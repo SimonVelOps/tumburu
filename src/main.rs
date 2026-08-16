@@ -3,29 +3,21 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 
 pub const SAMPLE_RATE: f32 = 48000.0;
+pub const MAX_EVENTS: usize = 2048;
 
 // ============================================================================
-// 1. DATA-CARRYING ENUMS (The Rust "Union" alternative)
+// 1. DATA-CARRYING ENUMS
 // ============================================================================
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Waveform { Sine, Sawtooth, Square, Triangle }
 
-/// Notice how `Cutoff` holds an f32, and `Waveform` holds our Waveform enum.
-/// In C, this would require a complicated struct/union combo.
 #[derive(Copy, Clone, Debug)]
 pub enum SynthParameter {
-    Waveform(Waveform),
-    Cutoff(f32),
-    Resonance(f32),
-    Overdrive(f32),
-    Attack(f32),
-    Decay(f32),
-    Sustain(f32),
-    Release(f32),
+    Waveform(Waveform), Cutoff(f32), Resonance(f32), Overdrive(f32),
+    Attack(f32), Decay(f32), Sustain(f32), Release(f32),
 }
 
-/// The sequencer command set. NoteOn holds both frequency and velocity!
 #[derive(Copy, Clone, Debug)]
 pub enum SequencerEvent {
     NoteOn { note_freq: f32, velocity: f32 },
@@ -36,7 +28,7 @@ pub enum SequencerEvent {
 }
 
 // ============================================================================
-// 2. MATH & DSP COMPONENTS (From previous steps)
+// 2. MATH & DSP COMPONENTS
 // ============================================================================
 
 fn fast_tanh(x: f32) -> f32 {
@@ -126,39 +118,15 @@ impl Adsr {
     }
 }
 
-// ============================================================================
-// 3. NEW IN STEP 3: SYNTH VOICE
-// ============================================================================
-
-/// Combines all DSP modules into a single monophonic voice.
 pub struct SynthVoice {
-    osc: PolyBlepOscillator,
-    filter: SvfFilter,
-    env: Adsr,
-    master_overdrive: f32,
+    osc: PolyBlepOscillator, filter: SvfFilter, env: Adsr, master_overdrive: f32,
 }
-
 impl SynthVoice {
-    pub fn new() -> Self {
-        Self {
-            osc: PolyBlepOscillator::new(),
-            filter: SvfFilter::new(),
-            env: Adsr::new(),
-            master_overdrive: 1.0,
-        }
-    }
-
-    /// Mutates voice state based on inbound sequencer events.
+    pub fn new() -> Self { Self { osc: PolyBlepOscillator::new(), filter: SvfFilter::new(), env: Adsr::new(), master_overdrive: 1.0 } }
     pub fn apply_event(&mut self, event: &SequencerEvent) {
-        // Pattern matching unwraps the data safely
         match event {
-            SequencerEvent::NoteOn { note_freq, velocity: _ } => {
-                self.osc.set_frequency(*note_freq);
-                self.env.trigger_on();
-            }
-            SequencerEvent::NoteOff => {
-                self.env.trigger_off();
-            }
+            SequencerEvent::NoteOn { note_freq, velocity: _ } => { self.osc.set_frequency(*note_freq); self.env.trigger_on(); }
+            SequencerEvent::NoteOff => { self.env.trigger_off(); }
             SequencerEvent::ParamChange(param) => match param {
                 SynthParameter::Waveform(w) => self.osc.waveform = *w,
                 SynthParameter::Cutoff(c) => self.filter.set_params(*c, self.filter.resonance),
@@ -172,53 +140,116 @@ impl SynthVoice {
             SequencerEvent::EndOfPattern | SequencerEvent::None => {}
         }
     }
-
-    /// Computes the final audio sample for the current cycle.
     pub fn process_sample(&mut self) -> f32 {
         let env_mod = self.env.process();
-        let osc_out = self.osc.process();
-
-        let mut signal = osc_out * env_mod;
+        let mut signal = self.osc.process() * env_mod;
         signal = self.filter.process(signal);
+        fast_tanh(signal * self.master_overdrive) * 0.5
+    }
+}
 
-        // Apply overdrive and analog saturation (soft clipping)
-        signal *= self.master_overdrive;
-        signal = fast_tanh(signal);
+#[derive(Copy, Clone, Debug)]
+pub struct EventNode {
+    pub timestamp: usize,
+    pub event: SequencerEvent,
+}
 
-        // Output margin
-        signal * 0.5
+// Gives us a safe, empty default to fill the array with at initialization.
+impl Default for EventNode {
+    fn default() -> Self {
+        EventNode { timestamp: 0, event: SequencerEvent::None }
+    }
+}
+
+pub struct Sequencer {
+    // A fixed-size array stored entirely on the stack. No heap allocation!
+    events: [EventNode; MAX_EVENTS],
+    event_count: usize,
+    current_index: usize,
+    sample_counter: usize,
+}
+
+impl Sequencer {
+    pub fn new() -> Self {
+        Self {
+            events: [EventNode::default(); MAX_EVENTS],
+            event_count: 0,
+            current_index: 0,
+            sample_counter: 0,
+        }
+    }
+
+    pub fn add_event(&mut self, timestamp: usize, event: SequencerEvent) {
+        if self.event_count < MAX_EVENTS {
+            self.events[self.event_count] = EventNode { timestamp, event };
+            self.event_count += 1;
+        }
+    }
+
+    pub fn process_tick(&mut self, voice: &mut SynthVoice) -> bool {
+        let mut active = true;
+
+        // Execute all events scheduled for the exact current sample index.
+        while self.current_index < self.event_count &&
+              self.events[self.current_index].timestamp == self.sample_counter {
+
+            let ev = &self.events[self.current_index].event;
+            if let SequencerEvent::EndOfPattern = ev {
+                active = false; // Stop the loop when the pattern is done
+            } else {
+                voice.apply_event(ev);
+            }
+            self.current_index += 1;
+        }
+
+        self.sample_counter += 1;
+        active
     }
 }
 
 // ============================================================================
-// 4. EXECUTION
+// 4. FINAL EXECUTION CONTEXT
 // ============================================================================
 
 fn main() {
-    println!("Step 3: Testing the unified SynthVoice...");
+    println!("Step 4: Running the Stack-Allocated Synthesizer...");
 
-    let mut voice = SynthVoice::new();
+    let mut synth = SynthVoice::new();
+    let mut seq = Sequencer::new();
     let sec = SAMPLE_RATE as usize;
 
-    // Send some setup events using our safe Enums
-    voice.apply_event(&SequencerEvent::ParamChange(SynthParameter::Waveform(Waveform::Square)));
-    voice.apply_event(&SequencerEvent::ParamChange(SynthParameter::Cutoff(1200.0)));
-    voice.apply_event(&SequencerEvent::ParamChange(SynthParameter::Overdrive(3.0))); // Push it hard!
+    // Setup harsh analog tone
+    seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Waveform(Waveform::Sawtooth)));
+    seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Cutoff(1800.0)));
+    seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Resonance(0.85)));
+    seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Overdrive(5.0)));
 
-    let mut file = BufWriter::new(File::create("step3_output.raw").expect("Failed to create file"));
+    // Musical phrase
+    seq.add_event(sec / 10, SequencerEvent::NoteOn { note_freq: 110.0, velocity: 1.0 }); // A2
+    seq.add_event(sec, SequencerEvent::NoteOff);
 
-    // Simulate a 2-second timeline manually
-    for i in 0..(sec * 2) {
-        // Timeline events
-        if i == 0 {
-            voice.apply_event(&SequencerEvent::NoteOn { note_freq: 480.0, velocity: 1.0 });
-        } else if i == sec {
-            voice.apply_event(&SequencerEvent::NoteOff);
-        }
+    seq.add_event(sec + (sec / 10), SequencerEvent::NoteOn { note_freq: 220.0, velocity: 1.0 }); // A3
+    seq.add_event(sec * 2, SequencerEvent::NoteOff);
 
-        let sample = voice.process_sample();
+    // Filter sweep modification during phrase
+    seq.add_event(sec * 2 + (sec / 10), SequencerEvent::ParamChange(SynthParameter::Cutoff(400.0)));
+    seq.add_event(sec * 2 + (sec / 10), SequencerEvent::NoteOn { note_freq: 55.0, velocity: 1.0 }); // A1
+    seq.add_event(sec * 3, SequencerEvent::NoteOff);
+
+    seq.add_event(sec * 4, SequencerEvent::EndOfPattern);
+
+    // Rendering Loop
+    let mut file = BufWriter::new(File::create("final_output.raw").expect("Failed to create file"));
+    let mut running = true;
+
+    while running {
+        // The sequencer tells us if we should keep running
+        running = seq.process_tick(&mut synth);
+        let sample = synth.process_sample();
+
         file.write_all(&sample.to_le_bytes()).unwrap();
     }
 
-    println!("Audio successfully written to 'step3_output.raw'.");
+    println!("Audio successfully written to 'final_output.raw'.");
+    println!("Playback via bash: aplay -f FLOAT_LE -r 48000 -c 1 final_output.raw");
 }
