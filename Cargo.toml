@@ -1,7 +1,7 @@
 [package]
 name = "velops_synth_subtract"
-description = "Proof of subtractive synthetisor"
-version = "0.0.1"
+description = "Proof of concept of a subtractive synthetisor"
+version = "0.0.2"
 edition = "2024"
 
 [dependencies]
