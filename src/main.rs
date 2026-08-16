@@ -5,9 +5,6 @@ use std::io::{BufWriter, Write};
 pub const SAMPLE_RATE: f32 = 48000.0;
 pub const MAX_EVENTS: usize = 2048;
 
-// ============================================================================
-// 1. DATA-CARRYING ENUMS
-// ============================================================================
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Waveform { Sine, Sawtooth, Square, Triangle }
@@ -26,10 +23,6 @@ pub enum SequencerEvent {
     EndOfPattern,
     None,
 }
-
-// ============================================================================
-// 2. MATH & DSP COMPONENTS
-// ============================================================================
 
 fn fast_tanh(x: f32) -> f32 {
     let x2 = x * x;
@@ -207,19 +200,15 @@ impl Sequencer {
     }
 }
 
-// ============================================================================
-// 4. FINAL EXECUTION CONTEXT
-// ============================================================================
-
 fn main() {
-    println!("Step 4: Running the Stack-Allocated Synthesizer...");
+    println!("VelOps POC substractive synthetiser...");
 
     let mut synth = SynthVoice::new();
     let mut seq = Sequencer::new();
     let sec = SAMPLE_RATE as usize;
 
     // Setup harsh analog tone
-    seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Waveform(Waveform::Sawtooth)));
+    seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Waveform(Waveform::Sine)));
     seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Cutoff(1800.0)));
     seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Resonance(0.85)));
     seq.add_event(0, SequencerEvent::ParamChange(SynthParameter::Overdrive(5.0)));
@@ -228,18 +217,18 @@ fn main() {
     seq.add_event(sec / 10, SequencerEvent::NoteOn { note_freq: 110.0, velocity: 1.0 }); // A2
     seq.add_event(sec, SequencerEvent::NoteOff);
 
-    seq.add_event(sec + (sec / 10), SequencerEvent::NoteOn { note_freq: 220.0, velocity: 1.0 }); // A3
+    seq.add_event(sec + (sec / 10), SequencerEvent::NoteOn { note_freq: 180.0, velocity: 1.0 }); // A3
     seq.add_event(sec * 2, SequencerEvent::NoteOff);
 
     // Filter sweep modification during phrase
     seq.add_event(sec * 2 + (sec / 10), SequencerEvent::ParamChange(SynthParameter::Cutoff(400.0)));
-    seq.add_event(sec * 2 + (sec / 10), SequencerEvent::NoteOn { note_freq: 55.0, velocity: 1.0 }); // A1
+    seq.add_event(sec * 2 + (sec / 10), SequencerEvent::NoteOn { note_freq: 150.0, velocity: 1.0 }); // A1
     seq.add_event(sec * 3, SequencerEvent::NoteOff);
 
     seq.add_event(sec * 4, SequencerEvent::EndOfPattern);
 
     // Rendering Loop
-    let mut file = BufWriter::new(File::create("final_output.raw").expect("Failed to create file"));
+    let mut file = BufWriter::new(File::create("pattern.raw").expect("Failed to create file"));
     let mut running = true;
 
     while running {
@@ -250,6 +239,6 @@ fn main() {
         file.write_all(&sample.to_le_bytes()).unwrap();
     }
 
-    println!("Audio successfully written to 'final_output.raw'.");
-    println!("Playback via bash: aplay -f FLOAT_LE -r 48000 -c 1 final_output.raw");
+    println!("Audio successfully written to 'pattern.raw'.");
+    println!("Playback via bash: aplay -f FLOAT_LE -r 48000 -c 1 pattern.raw");
 }
