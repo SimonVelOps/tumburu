@@ -9,3 +9,17 @@ name = "tumburu"
 path = "src/lib.rs"
 
 [dependencies]
+
+
+[profile.dev]
+lto = true
+debug-assertions = true
+overflow-checks = true
+opt-level = 1
+debug = "line-tables-only"
+[profile.release]
+lto = true
+panic = "abort"
+debug-assertions = false
+overflow-checks = false
+opt-level = 3
