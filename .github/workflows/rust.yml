@@ -1,5 +1,10 @@
 name: Rust
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 on:
   push:
     branches: [ "master" ]
@@ -21,20 +26,20 @@ jobs:
       run: cargo test --verbose
     - name: Run doc
       run: cargo doc --verbose --document-private-items --workspace --all-features --bins
-    - name: Rust Docs to Wiki
-      uses: tristanpoland/RustDoc-GH-Wiki@0.0.6
+    - name: Create redirect index.html
+      run: echo '<meta http-equiv="refresh" content="0; url=tumburu/index.html">' > target/doc/index.html
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        # GitHub token for wiki access (typically secrets.GITHUB_TOKEN)
-        token: ${{ github.token }} # default is ${{ github.token }}
-        # Directory containing Rust source files
-        source_path: src # optional, default is src
-        # Directory to store generated wiki content before publishing
-        wiki_path: tumburu.wiki.git # optional, default is wiki-content
-        # Commit message for wiki updates
-        commit_message: "Update documentation from Rust code (github action automated commit)" # optional, default is Update documentation from Rust code
-        # Comma-separated list of paths to exclude
-        excluded_paths: # optional, default is
-        # Whether to extract private items (true/false)
-        extract_private: # optional, default is false
-        # Maximum number of lines to extract for each definition
-        max_definition_lines: # optional, default is 50
+        path: target/doc
+
+deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
