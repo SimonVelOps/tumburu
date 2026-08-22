@@ -1,7 +1,11 @@
 [package]
-name = "Tumburu"
-description = "Digital Audio Workstation by people for people with love"
-version = "0.0.3"
+name = "tumburu"
+description = "Tumburu Digital Audio Workstation"
+version = "0.0.4"
 edition = "2024"
+
+[lib]
+name = "tumburu"
+path = "src/lib.rs"
 
 [dependencies]
