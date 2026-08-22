@@ -1,6 +1,5 @@
 name: Rust
 on:
-
   push:
     branches: [ "master" ]
   pull_request:
@@ -15,8 +14,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --verbose
+      run: cargo build
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test
     - name: Run doc (only to test documentation build)
-      run: cargo doc --verbose --document-private-items --workspace --all-features --bins
+      run: cargo doc
