@@ -25,13 +25,13 @@ jobs:
       uses: tristanpoland/RustDoc-GH-Wiki@0.0.6
       with:
         # GitHub token for wiki access (typically secrets.GITHUB_TOKEN)
-        token: # default is ${{ github.token }}
+        token: ${{ github.token }} # default is ${{ github.token }}
         # Directory containing Rust source files
-        source_path: # optional, default is src
+        source_path: src # optional, default is src
         # Directory to store generated wiki content before publishing
-        wiki_path: # optional, default is wiki-content
+        wiki_path: doc # optional, default is wiki-content
         # Commit message for wiki updates
-        commit_message: # optional, default is Update documentation from Rust code
+        commit_message: "Update documentation from Rust code (github action automated commit)" # optional, default is Update documentation from Rust code
         # Comma-separated list of paths to exclude
         excluded_paths: # optional, default is
         # Whether to extract private items (true/false)
