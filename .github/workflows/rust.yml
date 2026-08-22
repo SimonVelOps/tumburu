@@ -8,16 +8,32 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
-
+    - name: Rust Docs to Wiki
+    # You may pin to the exact commit or the version.
+    uses: tristanpoland/RustDoc-GH-Wiki@0.0.6
+    with:
+      # GitHub token for wiki access (typically secrets.GITHUB_TOKEN)
+      token: # default is ${{ github.token }}
+      # Directory containing Rust source files
+      source_path: # optional, default is src
+      # Directory to store generated wiki content before publishing
+      wiki_path: # optional, default is wiki-content
+      # Commit message for wiki updates
+      commit_message: # optional, default is Update documentation from Rust code
+      # Comma-separated list of paths to exclude
+      excluded_paths: # optional, default is
+      # Whether to extract private items (true/false)
+      extract_private: # optional, default is false
+      # Maximum number of lines to extract for each definition
+      max_definition_lines: # optional, default is 50
