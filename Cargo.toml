@@ -9,6 +9,7 @@ name = "tumburu"
 path = "src/lib.rs"
 
 [dependencies]
+cpal = "0.18.2"
 
 
 [profile.dev]
