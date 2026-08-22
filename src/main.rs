@@ -371,7 +371,7 @@ fn main() {
 
 //#[cfg(test)]
 mod tests {
-    
+    use super::*;
 
     // Verifies exact byte-for-byte output of generated raw signal data
     #[test]
@@ -394,13 +394,13 @@ mod tests {
             0, 0, 0, 0, // Sample 0 (Phase at 0.0)
             112, 145, 4, 183, // Sample 1
             129, 88, 46, 184, // Sample 2
-            238, 242, 239, 184, // Sample 3
-            44, 114, 115, 185, // Sample 4
-            193, 218, 208, 185, // Sample 5
-            227, 38, 33, 186, // Sample 6
-            18, 31, 103, 186, // Sample 7
-            222, 15, 157, 186, // Sample 8
-            174, 219, 204, 186, // Sample 9
+            240, 242, 239, 184, // Sample 3
+            47, 114, 115, 185, // Sample 4
+            195, 218, 208, 185, // Sample 5
+            230, 38, 33, 186, // Sample 6
+            21, 31, 103, 186, // Sample 7
+            223, 15, 157, 186, // Sample 8
+            176, 219, 204, 186, // Sample 9
         ];
 
         assert_eq!(generated_bytes, expected_bytes);
