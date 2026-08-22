@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install ALSA dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y libasound2-dev
     - name: Run doc build with all rustdoc features
       run: cargo doc
     - name: Create redirect index.html
