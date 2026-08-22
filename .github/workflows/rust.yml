@@ -29,7 +29,7 @@ jobs:
         # Directory containing Rust source files
         source_path: src # optional, default is src
         # Directory to store generated wiki content before publishing
-        wiki_path: doc # optional, default is wiki-content
+        wiki_path: tumburu.wiki.git # optional, default is wiki-content
         # Commit message for wiki updates
         commit_message: "Update documentation from Rust code (github action automated commit)" # optional, default is Update documentation from Rust code
         # Comma-separated list of paths to exclude
