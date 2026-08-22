@@ -369,7 +369,7 @@ fn main() {
     println!("Playback via bash: aplay -f FLOAT_LE -r 48000 -c 1 pattern.raw");
 }
 
-//#[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*;
 
