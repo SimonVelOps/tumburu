@@ -15,9 +15,12 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 use std::f32::consts::PI;
-use std::fs::File;
-use std::io::{BufWriter, Write};
+// use std::fs::File;
+// use std::io::{BufWriter, Write};
+use std::sync::mpsc;
+// use std::sync::Arc;
 
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use tumburu::{AdsrState, SequencerEvent, SynthParameter, Waveform};
 use tumburu::{MAX_EVENTS, SAMPLE_RATE};
 
@@ -298,6 +301,9 @@ fn main() {
 
     let mut synth = SynthVoice::new();
     let mut seq = Sequencer::new();
+
+    // IMPORTANT: In a real DAW, this should be pulled from the cpal device config dynamically
+    // rather than relying on a hardcoded constant, so it matches your DAC's clock.
     let sec = SAMPLE_RATE as usize;
 
     // Setup harsh analog tone
@@ -353,20 +359,52 @@ fn main() {
 
     seq.add_event(sec * 4, SequencerEvent::EndOfPattern);
 
-    // Rendering Loop
-    let mut file = BufWriter::new(File::create("pattern.raw").expect("Failed to create file"));
+    // --- REAL-TIME CPAL SETUP ---
+    let host = cpal::default_host();
+    let device = host
+        .default_output_device()
+        .expect("No output device available");
+    let supported_config = device
+        .default_output_config()
+        .expect("Failed to get default output config");
+    let config: cpal::StreamConfig = supported_config.into();
+    println!(
+        "Using DAC",
+    );
+    let (tx, rx) = mpsc::channel();
+    let channels = config.channels as usize;
     let mut running = true;
 
-    while running {
-        // The sequencer tells us if we should keep running
-        running = seq.process_tick(&mut synth);
-        let sample = synth.process_sample();
+    let stream = device
+        .build_output_stream(
+            // 2. Pass config by value, removing the '&'
+            config.clone(), // Or just `config,` if you don't need to use it again later
+            move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                for frame in data.chunks_mut(channels) {
+                    let mut current_sample = 0.0;
 
-        file.write_all(&sample.to_le_bytes()).unwrap();
-    }
+                    if running {
+                        running = seq.process_tick(&mut synth);
+                        current_sample = synth.process_sample();
+                    } else {
+                        let _ = tx.send(());
+                    }
 
-    println!("Audio successfully written to 'pattern.raw'.");
-    println!("Playback via bash: aplay -f FLOAT_LE -r 48000 -c 1 pattern.raw");
+                    for channel_sample in frame.iter_mut() {
+                        *channel_sample = current_sample;
+                    }
+                }
+            },
+            move |err| eprintln!("Audio stream error: {}", err),
+            None,
+        )
+        .expect("Failed to build output stream");
+
+    stream.play().expect("Failed to start audio stream");
+    println!("Playing audio in real-time...");
+
+    let _ = rx.recv();
+    println!("Playback complete. Exiting...");
 }
 
 #[cfg(test)]
