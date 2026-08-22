@@ -19,6 +19,8 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Run doc
+      run: cargo doc --verbose --document-private-items --workspace --all-features --bins
     - name: Rust Docs to Wiki
       uses: tristanpoland/RustDoc-GH-Wiki@0.0.6
       with:
