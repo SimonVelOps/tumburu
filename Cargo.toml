@@ -1,5 +1,5 @@
 [package]
-name = "tumburu"
+name = "tumburu_daw"
 description = "Tumburu Digital Audio Workstation"
 version = "0.0.4"
 edition = "2024"
