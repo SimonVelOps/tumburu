@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "tumburu"
+name = "tumburu_daw"
 version = "0.0.4"
