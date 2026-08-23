@@ -2,3 +2,5 @@
 # Vim editor related
 *.swp
 *.orig
+# ack executable
+/bin
