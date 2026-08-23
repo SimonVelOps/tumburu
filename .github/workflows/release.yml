@@ -1,11 +1,10 @@
 name: Release
 on:
   push:
-    branches: [ "master" ]
-  push:
-    tags: ["v*..", "v*"]
-  workflow_dispatch:
-
+    tags: [ "v*" ]
+  workflow_dispatch: 
+ 
+  
 env:
   CARGO_TERM_COLOR: always
 
@@ -13,20 +12,21 @@ jobs:
   build-release:
     name: Build Release (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
-    matrix:
-      include:
-      - os: ubuntu-latest
-        target: x86_64-unknown-linux-gnu
-        binary_name: tumburu_daw
-        archive_name: tumburu_daw-x86_64-unknown-linux-gnu.tar.gz
-      - os: macos-latest
-        target: aarch64-apple-darwin
-        binary_name: tumburu_daw
-        archive_name: tumburu_daw-aarch64-apple-darwin.tar.gz
-      - os: windows-latest
-        target: x86_64-pc-windows-msvc
-        binary_name: tumburu_daw.exe
-        archive_name: tumburu_daw-x86_64-pc-windows-msvc.zip
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: tumburu_daw
+            archive_name: tumburu_daw-x86_64-unknown-linux-gnu.tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: tumburu_daw
+            archive_name: tumburu_daw-aarch64-apple-darwin.tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: tumburu_daw.exe
+            archive_name: tumburu_daw-x86_64-pc-windows-msvc.zip
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
@@ -56,8 +56,6 @@ jobs:
         if (Test-Path "README.md") { Copy-Item "README.md" -Destination dist/ }
         if (Test-Path "LICENSE") { Copy-Item "LICENSE" -Destination dist/ }
         Compress-Archive -Path dist/* -DestinationPath "${{ matrix.archive_name }}"
-  deploy-release:
-    steps:
     - name: Publish Artifact to GitHub Release
       uses: softprops/action-gh-release@v2
       with:
