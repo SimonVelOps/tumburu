@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+/// Expose the crate internal modules
+pub mod envelope;
+pub mod filter;
+pub mod oscillator;
+pub mod sequencer;
+pub mod synth;
+
 pub const SAMPLE_RATE: f32 = 48000.0;
 pub const MAX_EVENTS: usize = 2048;
 
@@ -25,18 +33,6 @@ pub enum Waveform {
     Triangle,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum SynthParameter {
-    Waveform(Waveform),
-    Cutoff(f32),
-    Resonance(f32),
-    Overdrive(f32),
-    Attack(f32),
-    Decay(f32),
-    Sustain(f32),
-    Release(f32),
-}
-
 #[derive(Clone, Copy, PartialEq)]
 pub enum AdsrState {
     Idle,
@@ -46,11 +42,29 @@ pub enum AdsrState {
     Release,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum SequencerEvent {
-    NoteOn { note_freq: f32, velocity: f32 },
-    NoteOff,
-    ParamChange(SynthParameter),
-    EndOfPattern,
-    None,
+
+pub fn fast_tanh(x: f32) -> f32 {
+    let x2 = x * x;
+    let numerator = x * (135135.0 + x2 * (17325.0 + x2 * (378.0 + x2)));
+    let denominator = 135135.0 + x2 * (62370.0 + x2 * (3150.0 + x2 * 28.0));
+    let mut res = numerator / denominator;
+    if res > 1.0 {
+        res = 1.0;
+    }
+    if res < -1.0 {
+        res = -1.0;
+    }
+    res
+}
+
+pub fn poly_blep(mut t: f32, dt: f32) -> f32 {
+    if t < dt {
+        t /= dt;
+        t + t - t * t - 1.0
+    } else if t > 1.0 - dt {
+        t = (t - 1.0) / dt;
+        t * t + t + t + 1.0
+    } else {
+        0.0
+    }
 }
