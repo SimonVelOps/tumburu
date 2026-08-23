@@ -18,10 +18,11 @@
 // use std::io::{BufWriter, Write};
 // use std::sync::Arc;
 use std::sync::mpsc;
-
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use tumburu::sequencer::{Sequencer, SequencerEvent};
 use tumburu::synth::{SynthParameter, SynthVoice};
 use tumburu::{Waveform ,SAMPLE_RATE};
+
 
 fn main() {
     println!("Tumburu Digital Audio Workstation...");
