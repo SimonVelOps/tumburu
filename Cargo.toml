@@ -10,7 +10,11 @@ path = "src/lib.rs"
 
 [dependencies]
 cpal = "0.18.2"
-
+rodio = {
+    version = "0.22.1",
+    default-features = false,
+    features = ["symphonia-all"]
+}
 
 [profile.dev]
 lto = true
