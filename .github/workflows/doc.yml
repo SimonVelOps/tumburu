@@ -3,7 +3,6 @@ name: Doc
 on:
   push:
     branches: ["master"]
-  workflow_dispatch:
 permissions:
   contents: read
   pages: write
@@ -16,7 +15,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Clone source
+        uses: actions/checkout@v4
       - name: Run doc build with all rustdoc features
         run: cargo doc
       - name: Create redirect index.html
