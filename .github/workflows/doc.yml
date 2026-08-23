@@ -2,9 +2,7 @@ name: Doc
 
 on:
   push:
-    branches: [ "master" ]
-  workflow_dispatch:
-
+    branches: ["master"]
 permissions:
   contents: read
   pages: write
@@ -13,23 +11,20 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install ALSA dependencies (Linux)
-      if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y libasound2-dev
-    - name: Run doc build with all rustdoc features
-      run: cargo doc
-    - name: Create redirect index.html
-      run: echo '<meta http-equiv="refresh" content="0; url=tumburu/index.html">' > target/doc/index.html
-    - name: Upload Pages artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: target/doc
+      - name: Clone source
+        uses: actions/checkout@v4
+      - name: Run doc build with all rustdoc features
+        run: cargo doc
+      - name: Create redirect index.html
+        run: echo '<meta http-equiv="refresh" content="0; url=tumburu/index.html">' > target/doc/index.html
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
   deploy:
     needs: build
     environment:
@@ -37,6 +32,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v5
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+

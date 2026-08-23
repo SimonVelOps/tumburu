@@ -1,0 +1,22 @@
+name: Test
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source
+        uses: actions/checkout@v4
+      - name: Install ALSA dependencies (Linux)
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - name: Run tests
+        run: cargo test
+      - name: Run Release test
+        run: cargo test --release

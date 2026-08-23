@@ -56,6 +56,12 @@ pub struct PolyBlepOscillator {
     phase: f32,
     phase_inc: f32,
 }
+impl Default for PolyBlepOscillator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PolyBlepOscillator {
     pub fn new() -> Self {
         Self {
@@ -100,6 +106,12 @@ pub struct SvfFilter {
     ic1eq: f32,
     ic2eq: f32,
 }
+impl Default for SvfFilter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SvfFilter {
     pub fn new() -> Self {
         Self {
@@ -137,6 +149,12 @@ pub struct Adsr {
     pub release_time: f32,
     current_val: f32,
 }
+impl Default for Adsr {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Adsr {
     pub fn new() -> Self {
         Self {
@@ -193,6 +211,12 @@ pub struct SynthVoice {
     env: Adsr,
     master_overdrive: f32,
 }
+impl Default for SynthVoice {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SynthVoice {
     pub fn new() -> Self {
         Self {
@@ -258,6 +282,12 @@ pub struct Sequencer {
     current_index: usize,
     sample_counter: usize,
 }
+impl Default for Sequencer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Sequencer {
     pub fn new() -> Self {
         Self {
@@ -378,7 +408,7 @@ fn main() {
     let stream = device
         .build_output_stream(
             // 2. Pass config by value, removing the '&'
-            config.clone(), // Or just `config,` if you don't need to use it again later
+            config, // Or just `config,` if you don't need to use it again later
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                 for frame in data.chunks_mut(channels) {
                     let mut current_sample = 0.0;
