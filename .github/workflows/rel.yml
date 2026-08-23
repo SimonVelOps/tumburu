@@ -1,0 +1,29 @@
+name: Rel
+on:
+  pull_request:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    name: Build Release
+    runs-on:
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+      - name: Install ALSA dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+      - name: Build Release Binary
+        run: cargo build --release
+      - name: Publish Artifact to GitHub Release
+        uses: actions/upload-pages-artifact@v3
+        with:
+          files: target/release
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
