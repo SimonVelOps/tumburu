@@ -1,8 +1,14 @@
 name: Rel
 on:
   push:
+    branches: ["master"]
     tags: ["v*"]
   workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -17,4 +23,3 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev
       - name: Build Release Binary
         run: cargo build --release
-      
