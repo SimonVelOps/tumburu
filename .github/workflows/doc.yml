@@ -3,6 +3,7 @@ name: Doc
 on:
   push:
     branches: ["master"]
+  workflow_dispatch:
 permissions:
   contents: read
   pages: write
@@ -17,6 +18,8 @@ jobs:
     steps:
       - name: Clone source
         uses: actions/checkout@v4
+      - name: Install ALSA dependencies (Linux)
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
       - name: Run doc build with all rustdoc features
         run: cargo doc
       - name: Create redirect index.html
