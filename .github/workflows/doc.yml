@@ -18,10 +18,8 @@ jobs:
     steps:
       - name: Clone source
         uses: actions/checkout@v4
-      - name: Install system dev build deps
-        uses: ConorMacBride/install-package@v1.1.0
-        with: 
-          apt: dbus-devel alsa-lib-devel
+      - name: Install ALSA dependencies (Linux)
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
       - name: Run doc build with all rustdoc features
         run: cargo doc
       - name: Create redirect index.html
